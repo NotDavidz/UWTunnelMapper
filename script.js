@@ -16,55 +16,50 @@ class Building {
 
 
 // -------------------------- Graph Definition ------------------------------
-/*
-const nodes = [
-    new Building("EXP", ["LHI", "BMH"]),
-    new Building("LHI", ["EXP", "BMH", "PAC"]),
-    new Building("BMH", ["LHI", "EXP"]),
-    new Building("PAC", ["LHI", "SLC"]),
-    new Building("SLC", ["PAC", "MC"]),
-    new Building("MC", ["C2", "QNC", "SLC"]),
-    new Building("C2", ["MC", "DC", "ESC"]),
-    new Building("DC", ["C2", "CIM", "M3"]),
-    new Building("M4", []),
-    new Building("M3", ["DC"]),
-    new Building("QNC", ["MC", "B2", "STC"]),
-    new Building("B2", ["B1", "QNC"]),
-    new Building("B1", ["B2", "ESC"]),
-    new Building("STC", ["NH", "B2"]),
-    new Building("NH", ["STC"]),
-    new Building("ESC", ["C2", "B1", "EIT"]),
-    new Building("EIT", ["CIM", "PHY", "ESC"]),
-    new Building("CIM", ["DC", "EIT", "E3"]),
-    new Building("PHY", ["EIT", "E2"]),
-    new Building("RCH", ["E2", "DWE"]),
-    new Building("DWE", ["RCH", "E2", "SCH"]),
-    new Building("CPH", ["E2"]),
-    new Building("E2", ["PHY", "E3", "CPH", "DWE", "RCH"]),
-    new Building("E3", ["CIM", "E2", "E5"]),
-    new Building("E5", ["E3", "E7"]),
-    new Building("E6", ["E7"]),
-    new Building("E7", ["E6", "E5"]),
-    new Building("EV3", ["EV2"]),
-    new Building("EV2", ["EV3", "EV1"]),
-    new Building("EV1", ["EV2", "AL"]),
-    new Building("AL", ["LIB", "ML", "TC"]),
-    new Building("ML", ["AL"]),
-    new Building("LIB", ["AL"]),
-    new Building("TC", ["AL", "HH", "SCH"]),
-    new Building("PAS", ["HH"]),
-    new Building("HH", ["TC", "PAS"]),
-    new Building("SCH", ["TC", "DWE"])
-];
-*/
 
 const nodes = [
-    new Building("EXP", ["LHI", "DC"], 100, 100),
-    new Building("LHI", ["EXP", "DC", "PAC"], 150, 150),
-    new Building("DC", ["LHI", "EXP"], 100, 200),
-    new Building("PAC", ["LHI", "SLC"], 200, 150),
-    new Building("SLC", ["PAC"], 300, 150),
-
+    //North Cluster
+    new Building("EXP", ["LHI", "BMH"], 90, 90),
+    new Building("BMH", ["LHI", "EXP"], 90, 180),
+    new Building("LHI", ["EXP", "BMH"], 180, 90),
+    
+    //Main Cluster
+    new Building("PAC", ["SLC"], 180, 180),
+    new Building("SLC", ["PAC", "MC"], 270, 180),
+    new Building("MC", ["C2", "QNC", "SLC", "M4"], 360,180),
+    new Building("M4", ["MC", "DC", "M3"], 450, 180),
+    new Building("M3", ["DC", "M4"], 450, 90),
+    new Building("DC", ["C2", "CIM", "M3", "M4"], 540, 180),
+    new Building("QNC", ["MC", "B2"], 270,270),
+    new Building("C2", ["MC", "DC", "ESC"], 450, 270),
+    new Building("CIM", ["DC", "EIT", "E3"], 540, 270),
+    new Building("ESC", ["C2", "B1", "EIT"], 450, 360),
+    new Building("B2", ["B1", "QNC", "STC"], 270, 360),
+    new Building("B1", ["B2", "ESC"], 360,360),
+    new Building("STC", ["NH", "B2"], 180, 450),
+    new Building("NH", ["STC"], 180, 540),
+    new Building("E3", ["CIM", "E2", "E5"], 630, 360),
+    new Building("E5", ["E3", "E7"], 720, 270),
+    new Building("E7", ["E6", "E5"], 720, 180),
+    new Building("E6", ["E7"], 720, 90),
+    new Building("EIT", ["CIM", "PHY", "ESC"], 540, 360),
+    new Building("PHY", ["EIT", "E2"], 540, 450),
+    new Building("E2", ["PHY", "E3", "CPH", "DWE", "RCH"], 630, 450),
+    new Building("DWE", ["RCH", "E2", "CPH", "RES"], 630, 540),
+    new Building("RCH", ["E2", "DWE"], 540, 540),
+    new Building("CPH", ["E2", "DWE"], 720, 450),
+    new Building("RES", ["DWE"], 720, 630),
+    
+    //South Cluster
+    new Building("EV3", ["EV2"], 90, 630),
+    new Building("EV2", ["EV3", "EV1", "PAS"], 180, 720),
+    new Building("EV1", ["EV2", "AL", "HH", "ML"], 270, 630),
+    new Building("HH", ["EV1"], 360, 720),
+    new Building("PAS", ["EV2"], 270, 720),
+    new Building("ML", ["AL", "EV1"], 270, 540),
+    new Building("TC", ["AL", "SCH"], 450, 630),
+    new Building("AL", ["ML", "TC", "EV1"], 360, 630),
+    new Building("SCH", ["TC"], 540, 630)
 ]
 
 
@@ -154,6 +149,7 @@ function buildingExist(name){
 
 
 function updateOutput(args){
+    return;
     var output = document.getElementById("output");
     output.textContent = args;
 
@@ -217,7 +213,11 @@ nodes.forEach(node => {
 });
 
 //Setup SVG
+const width = 800;
+const height = 800;
 const svg = d3.select("#subway-map")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("preserveAspectRation", "xMidYMid meet")
     .attr("width", "100%")
     .attr("height", "100%");
 
