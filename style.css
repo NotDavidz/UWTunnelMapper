@@ -198,3 +198,59 @@ input{
         opacity: 100%;
     }
   }
+
+
+
+/*Gemini*/
+/* Container for the map */
+#map-container {
+    width: 100%;
+    height: 600px;
+    background: rgba(255, 255, 255, 0.9); /* Slight overlay on your snow bg */
+    border-top: 5px solid rgb(221, 180, 68);
+    border-bottom: 5px solid rgb(221, 180, 68);
+    overflow: hidden;
+}
+
+/* 1. Default Graph Styles */
+.link {
+    stroke: #555;      /* Dark grey lines */
+    stroke-width: 6px; /* Thick "Subway" style */
+    stroke-linecap: round;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.node circle {
+    fill: white;
+    stroke: #333;
+    stroke-width: 3px;
+    r: 8; /* Radius of station dot */
+    transition: all 0.3s ease;
+}
+
+.node text {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    pointer-events: none; /* Let clicks pass through text */
+}
+
+/* 2. Focus Mode (Grays out everything) */
+svg.focus-mode .link,
+svg.focus-mode .node {
+    opacity: 0.1;
+    filter: grayscale(100%);
+}
+
+/* 3. Active Path (Brings specific elements back to life) */
+svg.focus-mode .link.active,
+svg.focus-mode .node.active {
+    opacity: 1;
+    filter: grayscale(0%);
+}
+
+svg.focus-mode .link.active {
+    stroke-width: 10px; /* Make the path thicker */
+    stroke: #ca9e25;    /* Gold path color */
+}
