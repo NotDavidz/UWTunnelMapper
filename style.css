@@ -17,7 +17,6 @@ body {
     
 }
 
-/* Optional: Add a semi-transparent overlay to improve text readability */
 body::before {
     content: '';
     position: absolute;
@@ -25,8 +24,8 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.75); /* Black overlay with 50% opacity */
-    z-index: -1; /* Place the overlay behind the content */
+    background: rgba(255, 255, 255, 0.75); 
+    z-index: -1;
 }
 
 
@@ -49,14 +48,13 @@ h1 {
 
 .button-row{
     position: relative;
-    bottom: 60px; /* This moves both buttons up together */
+    bottom: 60px; 
     display: flex;
     align-items: center;
-    justify-content: center; /* Centers them horizontally */
-    gap: 10px; /* Space between the big button and the square button */
+    justify-content: center; 
+    gap: 10px; 
 }
-
-/* Button for Calculating*/ 
+ 
 
 #calculate {
     position: relative;
@@ -72,12 +70,11 @@ h1 {
     cursor: pointer;
     color: #000000;
     background-color: rgb(254, 211, 76);
-    border: 2px solid rgb(118, 118, 118); /* Standard Grey Border */
+    border: 2px solid rgb(118, 118, 118); 
 }
 
-/* New Square Clear Button Style */
 #clear_btn {
-    border: 2px solid rgb(118, 118, 118); /* Standard Grey Border */
+    border: 2px solid rgb(118, 118, 118); 
     width: 44px;   
     height: 40px;  
     background-color:  #e49b9b;
@@ -92,7 +89,7 @@ h1 {
 }
 
 #clear_btn:hover {
-    background-color: #bb7272; /* Light red hover */
+    background-color: #bb7272; 
 
 }
 
@@ -156,7 +153,6 @@ input{
     gap: 30px;              
 }
 
-/*parent of field and text*/
 #field_prompt_parent{
     position: absolute;
     display: flex;
@@ -235,34 +231,29 @@ input{
     }
   }
 
-
-
-/*Gemini*/
-/* Container for the map */
 #map-container {
     width: 55%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.9); /* Slight overlay on your snow bg */
+    background: rgba(255, 255, 255, 0.9); 
 
     border-right: 10px solid rgb(221, 180, 68);
     overflow: hidden;
     animation: fadeIn 2s;
 }
 
-/* 1. Default Graph Styles */
 .link {
-    stroke: #969696;      /* Dark grey lines */
-    stroke-width: 6px; /* Thick "Subway" style */
+    stroke: #969696;   
+    stroke-width: 6px; 
     stroke-linecap: round;
     opacity: 0.8;
     transition: all 0.3s ease;
 }
 
-/* Grow the node when hovered */
+
 .node circle:not(.closed):hover {
-    transform: scale(1.2); /* 1.5x bigger */
-    cursor: pointer;       /* Shows a hand cursor */
-    z-index: 100;          /* Ensures it pops on top of other elements */
+    transform: scale(1.2); 
+    cursor: pointer;      
+    z-index: 100;     
     fill: rgb(199, 199, 199);
     transition: all 0.3s ease;
 }
@@ -272,11 +263,11 @@ input{
     fill: white;
     stroke: #333;
     stroke-width: 3px;
-    r: 8; /* Radius of station dot */
+    r: 8; 
     transition: all 0.3s ease;
 
     transition: transform 0.2s ease, opacity 0.3s ease;
-    transform-box: fill-box; /* Ensures scaling happens from center of the node */
+    transform-box: fill-box; 
     transform-origin: center; 
 }
 
@@ -284,33 +275,30 @@ input{
     font-family: Arial, sans-serif;
     font-size: 15px;
     font-weight: bold;
-    pointer-events: none; /* Let clicks pass through text */
+    pointer-events: none;
 }
 
-/* 2. Focus Mode (Grays out everything) */
 svg.focus-mode .link,
 svg.focus-mode .node {
     opacity: 0.15;
     filter: grayscale(100%);
 }
 
-/* 3. Active Path (Brings specific elements back to life) */
+
 svg.focus-mode .link.active,
 svg.focus-mode .node.active {
     opacity: 1;
     filter: grayscale(0%);
 }
-
+/*Thicker Paths */
 svg.focus-mode .link.active {
-    stroke-width: 10px; /* Make the path thicker */
-    stroke: #ca9e25;    /* Gold path color */
+    stroke-width: 10px; 
+    stroke: #ca9e25;   
 }
 
-/* --- NEW STYLES FOR STATUSES --- */
-
-/* 1. Closed/Obstructed Elements (Light Red) */
+/*Path and Node Statuses */
 .link.closed {
-    stroke: #d38a8a !important; /* Force red override */
+    stroke: #d38a8a !important;
     opacity: 0.4;
     pointer-events: none;
 }
@@ -324,13 +312,12 @@ svg.focus-mode .link.active {
     fill: #cc0000;
 }
 
-/* 2. Outside Edges (Dashed) */
+/*Outside Edges*/
 .link.outside {
-    stroke-dasharray: 6; /* Dashed line */
+    stroke-dasharray: 6;
     stroke-linecap: butt;
 }
 
-/* 3. Focus Mode Updates */
 /* If an element is active AND outside, make it Blue */
 svg.focus-mode .link.active.outside {
     stroke: #007bff !important; 
@@ -344,19 +331,13 @@ svg.focus-mode .node.closed {
 }
 
 /* Outside Button**/
-
-/* Style for the new toggle button */
 #outside_btn {
     position: relative;
-    /* Move it up slightly to sit tight under the row */
     bottom: 60px; 
-    
-    /* Center it */
     display: block;
     margin: 0 auto;
     
-    /* Visual Style (Matches other buttons) */
-    width: 250px; /* Matches width of Find Path (140) + Gap (10) + Clear (44) */
+    width: 250px;
     padding: 10px 0;
     font-size: 16px;
     color: #000000;
@@ -364,24 +345,21 @@ svg.focus-mode .node.closed {
     border-radius: 10px;
     cursor: pointer;
     
-    /* Default State (Off) */
     background-color: #C8C8C8;
     border: 2px solid rgb(118, 118, 118);
     transition: all 0.2s ease;
 }
 
-/* Hover Effect */
 #outside_btn:hover {
     background-color: #f0f0f0;
 }
 
-/* === ACTIVE STATE (Blue) === */
 #outside_btn.active-blue {
-    background-color: #007bff; /* Bright Blue */
+    background-color: #007bff; 
     color: white;
     border-color: #0056b3;
 }
 
 #outside_btn.active-blue:hover {
-    background-color: #0056b3; /* Darker Blue on Hover */
+    background-color: #0056b3;
 }

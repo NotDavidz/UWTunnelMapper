@@ -1,5 +1,5 @@
 
-//Graph Definition for Building/Connections 
+// -------------------------- Building Definition ------------------------------
 
 class Building {
     constructor(name, outNeighbours, x, y) {
@@ -71,19 +71,15 @@ const outsideTunnels = [["PAC", "LHI"], ["DP", "AL"], ["EV3", "NH"], ["DWE", "SC
 
 // -------------------------- Helper Functions ------------------------------
 
-// 1. NEW: Function to toggle the button visual state
+//Toggle function for outside button
 function toggleOutside() {
     const btn = document.getElementById("outside_btn");
     
-    // Toggle the visual class
     btn.classList.toggle("active-blue");
 
-    // Check if it is now active to change the text
     if (btn.classList.contains("active-blue")) {
-        // Add Checkmark (✔)
         btn.innerHTML = "Use Outside Paths: On";
     } else {
-        // Reset to original text
         btn.innerHTML = "Use Outside Paths: Off";
     }
 }
@@ -93,18 +89,24 @@ function findBuilding(name) {
     return nodes.find(node => node.name === name) || null;
 }
 
+// Returns if a building is closed or not
 function isBuildingClosed(name) {
     return closedBuildings.includes(name);
 }
 
+// Returns if a tunnel is closed or not
 function isTunnelClosed(nodeA, nodeB) {
+
+    //Check if its in the array
     const isClosed = closedTunnels.some(pair => 
         (pair[0] === nodeA && pair[1] === nodeB) || 
         (pair[0] === nodeB && pair[1] === nodeA)
     );
+
     return isClosed || isBuildingClosed(nodeA) || isBuildingClosed(nodeB);
 }
 
+// Returns if a tunnel is outdoors
 function isOutsideTunnel(nodeA, nodeB) {
     return outsideTunnels.some(pair => 
         (pair[0] === nodeA && pair[1] === nodeB) || 
@@ -112,6 +114,7 @@ function isOutsideTunnel(nodeA, nodeB) {
     );
 }
 
+// Finds all the avaliable paths
 function findAllPaths(start, end, allowOutside = false, path = []) {
     path = [...path, start];
 
@@ -128,10 +131,8 @@ function findAllPaths(start, end, allowOutside = false, path = []) {
         // Prevent cycles
         if (path.includes(neighbor)) continue;
 
-        // Check if CLOSED
+        // Check if closed or outside
         if (isTunnelClosed(start, neighbor)) continue;
-
-        // Check if OUTSIDE (skip if outside is not allowed)
         if (isOutsideTunnel(start, neighbor) && !allowOutside) continue;
 
         const newPaths = findAllPaths(neighbor, end, allowOutside, path);
@@ -147,7 +148,7 @@ function sortPaths(paths) {
     return paths.sort((a, b) => a.length - b.length);
 }
 
-
+//Updates the textboxes' color
 function updateFieldColor(){
     console.log("Hello!");
     var start_input = document.getElementById("start_txtfield");
@@ -159,6 +160,7 @@ function updateFieldColor(){
     let start = (start_input.value).toUpperCase();
     let end = (end_input.value).toUpperCase();
 
+    //Inc if its not there
     acc+= updateFieldHelper(start_input, start_icon, buildingExist(start));
     acc+= updateFieldHelper(end_input, end_icon, buildingExist(end));
 
@@ -172,6 +174,7 @@ function updateFieldColor(){
 
 }
 
+// Update the field status indicator
 function updateFieldHelper(input, icon, status){
     if (status){
         input.style.backgroundColor = "#c1deb5";
@@ -189,7 +192,7 @@ function updateFieldHelper(input, icon, status){
     
 }
 
-
+//Check if a build exists
 function buildingExist(name){
     for (var i = 0; i < nodes.length; i++){
         console.log(nodes[i]);
@@ -201,7 +204,7 @@ function buildingExist(name){
     return false;
 }
 
-
+//Deprecated function
 function updateOutput(args){
     return;
     var output = document.getElementById("output");
@@ -214,12 +217,10 @@ function updateOutput(args){
 
 // -------------------------- Main Functions ----------------------------------
 
-// ==========================================
-// 4. MAP VISUALIZATION (D3)
-// ==========================================
-
+//Initialize the Map
 function initMap() {
-    // 1. Generate Links Data
+
+    //Generate the links
     const links = [];
     nodes.forEach(source => {
         source.outNeighbours.forEach(targetName => {
@@ -230,7 +231,7 @@ function initMap() {
         });
     });
 
-    // 2. Setup SVG
+    //Initiate SVG
     const width = 800;
     const height = 800;
     const svg = d3.select("#subway-map")
@@ -241,7 +242,7 @@ function initMap() {
 
     const g = svg.append("g"); 
 
-    // 3. Draw Links
+    //Draw the links
     const linkElements = g.selectAll(".link")
         .data(links)
         .enter().append("line")
@@ -250,10 +251,7 @@ function initMap() {
             const u = d.source.name;
             const v = d.target.name;
 
-            // Priority 1: Closed (Red)
             if (isTunnelClosed(u, v)) return "link closed";
-            
-            // Priority 2: Outside (Dashed)
             if (isOutsideTunnel(u, v)) classes += " outside";
             
             return classes;
@@ -261,35 +259,30 @@ function initMap() {
         .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
         .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
 
-    // 4. Draw Nodes
-
+    //Draw the buildings/nodes
     const nodeElements = g.selectAll(".node")
         .data(nodes)
         .enter().append("g")
         .attr("class", d => isBuildingClosed(d.name) ? "node closed" : "node")
         .attr("id", d => `node-${d.name}`)
         .attr("transform", d => `translate(${d.x},${d.y})`)
-        .style("cursor", "pointer") // Makes mouse look like a hand pointer
+        .style("cursor", "pointer") 
         
-        // --- CLICK EVENT LISTENER ---
+        //Click functionalities
         .on("click", function(event, d) {
+
             // Get current values
             const startInput = document.getElementById("start_txtfield");
             const endInput = document.getElementById("end_txtfield");
             
-            // Logic: Where should we put this building name?
             if (startInput.value === "") {
-                // 1. If Start is empty, fill Start
                 startInput.value = d.name;
             } else if (endInput.value === "") {
-                // 2. If Start is full but End is empty, fill End
                 endInput.value = d.name;
             } else {
-                // 3. If both are full, overwrite Destination
                 endInput.value = d.name;
             }
 
-            // Update visuals (Green box/Checkmark)
             if (typeof updateFieldColor === "function") {
                 updateFieldColor();
             }
@@ -300,33 +293,28 @@ function initMap() {
         .attr("dx", 12).attr("dy", ".35em").text(d => d.name);
 
 
-    // 5. Draw Map Title (Overlay)
+    //Title
     svg.append("text")
-        .attr("x", width / 2)          // Centers text horizontally (800 / 2 = 400)
-        .attr("y", 50)                 // positions it 50px from the top
-        .attr("text-anchor", "middle") // Ensures it centers on the x-coordinate
+        .attr("x", width / 2)
+        .attr("y", 50)
+        .attr("text-anchor", "middle")
         .style("font-family", "Arial, sans-serif")
-        .style("font-size", "30px")    // Adjust size as needed
+        .style("font-size", "30px")
         .style("font-weight", "bold")
-        .style("fill", "#b88701ff") // Matches your Gold theme
+        .style("fill", "#b88701ff")
         .style("stroke-width", "0.5px")
         .text("University of Waterloo Tunnel and Bridge System Map");
 
-    
-    // Store globally (existing code)
+
     window.mapVisuals = { svg, linkElements, nodeElements };
 }
 
-// ==========================================
-// 5. USER INTERACTION
-// ==========================================
-
+//Calculate the shortest path
 function calculatePath() {
     let start = document.getElementById("start_txtfield").value.toUpperCase();
     let end = document.getElementById("end_txtfield").value.toUpperCase();
     const outputText = document.getElementById("output");
-    
-    // --- UPDATED LINE ---
+
     // Check if the button has the blue class
     const btn = document.getElementById("outside_btn");
     const useOutside = btn ? btn.classList.contains("active-blue") : false;
@@ -336,31 +324,30 @@ function calculatePath() {
         return;
     }
 
-    // ... (Rest of your calculatePath logic stays exactly the same) ...
     let allPaths = findAllPaths(start, end, useOutside);
     let forcedOutside = false;
 
     if (allPaths.length === 0 && !useOutside) {
         const outsidePaths = findAllPaths(start, end, true);
+        //If there are only outside paths, then we are forced to use it
         if (outsidePaths.length > 0) {
             allPaths = outsidePaths;
             forcedOutside = true;
         }
     }
     
+
     if (allPaths.length > 0) {
         let bestPath = sortPaths(allPaths)[0];
         let msg = "";
-
         if (forcedOutside) {
             msg = "⚠️ Outdoor path in use (No indoor route)<br>";
             outputText.innerHTML = msg; 
             outputText.style.color = "#00438aff"; 
         } else {
             outputText.textContent = msg;
-            outputText.style.color = "rgb(234, 171, 0)"; 
+            outputText.style.color = "rgb(234, 171, 0)"; //Not actually used
         }
-
         highlightMap(bestPath);
     } else {
         alert("No path found (Check for closed buildings/tunnels).");
@@ -368,21 +355,22 @@ function calculatePath() {
     }
 }
 
+//Highlight path on map
 function highlightMap(pathArray) {
     if (!window.mapVisuals) return;
     const { svg, linkElements, nodeElements } = window.mapVisuals;
     
-    // Dim Everything
+    // Dim Everything else
     svg.classed("focus-mode", true);
     
     // Reset previous actives
     svg.selectAll(".active").classed("active", false);
 
-    // Highlight Nodes
+    // Highlight each node
     nodeElements.filter(d => pathArray.includes(d.name))
         .classed("active", true);
 
-    // Highlight Edges
+    // Highlight used edges
     linkElements.each(function(d) {
         const u = d.source.name;
         const v = d.target.name;
@@ -403,16 +391,15 @@ function highlightMap(pathArray) {
     });
 }
 
-// 3. UPDATE: clearMap (Turn off the blue button)
+//Clear the Map
 function clearMap() {
     document.getElementById("start_txtfield").value = "";
     document.getElementById("end_txtfield").value = "";
-    
-    // --- RESET TOGGLE BUTTON ---
+
     const btn = document.getElementById("outside_btn");
     if (btn) {
         btn.classList.remove("active-blue"); // Remove Blue Color
-        btn.innerHTML = "Use Outside Paths: Off"; // Remove Checkmark
+        btn.innerHTML = "Use Outside Paths: Off"; 
     }
     
     const output = document.getElementById("output");
@@ -432,22 +419,15 @@ function clearMapVisualsOnly() {
     }
 }
 
-// Initialize on load
-window.onload = function() {
-    initMap();
-};
 
-// --- KEYBOARD SHORTCUTS ---
+// -------------------------- Keyboard Shortcuts ------------------------------
 document.addEventListener("keydown", function(event) {
-    // 1. ENTER Key -> Find Path
+
     if (event.key === "Enter") {
-        // Prevent "Enter" from refreshing page if inside a form
         event.preventDefault(); 
         calculatePath();
     }
-    
-    // 2. 'O' or 'o' Key -> Toggle Outside Mode
-    // We check if the user is NOT typing in a text box (to avoid typing 'o' in a name)
+
     else if (event.key.toLowerCase() === "o") {
         const activeTag = document.activeElement.tagName;
         if (activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
@@ -455,10 +435,14 @@ document.addEventListener("keydown", function(event) {
         }
     }
 
-    // 3. ESCAPE Key -> Clear Map
     else if (event.key === "Escape") {
         clearMap();
-        // Optional: Remove focus from inputs so you can use 'O' immediately
         document.activeElement.blur(); 
     }
 });
+
+
+// -------------------------- Initialize on Load ------------------------------
+window.onload = function() {
+    initMap();
+};
