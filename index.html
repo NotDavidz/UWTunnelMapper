@@ -2,6 +2,7 @@
 
 <html lang="en" dir="ltr">
 <head>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UW Tunnel Map</title>
@@ -10,33 +11,51 @@
     
 </head>
 <body>
-    <script src="script.js"></script>
-    <!-- Main Text --> 
-    <p id="main_subtext">Uwaterloo Tunnel-Bridge Pathfinder</p>
 
+    <!-- Display Map --> 
+    <div id="map-container">
+        <svg id="subway-map"></svg>
+    </div>
+    
+    <script src="script.js"></script>
+   
     <!-- Input Box --> 
     <div id="field_prompt_parent">
+        <!-- Main Text --> 
+        <p id="main_subtext">System Pathfinder</p>
         <p id="prompt"> Start: </p>
         <p id="prompt"> Destination: </p>
         <input id = "start_txtfield" onchange="updateFieldColor()" placeholder = "..."> </input>
         <input id = "end_txtfield" onchange="updateFieldColor()" placeholder = "..."> </input>
-        <button  disabled = true id = "calculate" onclick="calculatePath()"><span>Find Path</span></button>
+        
+        <!-- Buttons -->
+        <div class="button-row">
+        <button disabled="true" id="calculate" onclick="calculatePath()">
+            <span>Find Path</span>
+        </button>
+        
+        <button id="clear_btn" onclick="clearMap()" title="Clear Map">
+            &#10006; 
+        </button>
+        </div>
+        
+   
+        <button id="outside_btn" onclick="toggleOutside()">
+        Use Outside Paths: Off
+        </button>
+
         <!-- Icon for Input-->
         <div id="prompt_icons">
             <p id="start_prompt_icon"></p>
             <p id="end_prompt_icon"></p>
         </div>
+
+        <!-- Warning Field --> 
+        <div id="result_parent">
+            <p id="output"></p>
+        </div>
     </div>
 
-    <!-- Text Field for Result --> 
-    <div id="result_parent">
-        <p id="output">Enter Building Codes ▲</p>
-    </div>
-   
-
-    
-    <!-- Display Map --> 
-     
     
 
 

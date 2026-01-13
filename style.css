@@ -17,7 +17,6 @@ body {
     
 }
 
-/* Optional: Add a semi-transparent overlay to improve text readability */
 body::before {
     content: '';
     position: absolute;
@@ -25,8 +24,8 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.75); /* Black overlay with 50% opacity */
-    z-index: -1; /* Place the overlay behind the content */
+    background: rgba(255, 255, 255, 0.75); 
+    z-index: -1;
 }
 
 
@@ -37,32 +36,63 @@ h1 {
 
 
 #main_subtext{
-    color:rgb(234, 171, 0);
-    text-shadow: 1px 1px 2px rgb(0, 0, 0);
-    font-size: 20px;
-    font-weight: 600;
-    font-size: 40px;
+    top:10%;
+    color:#b88701ff;
+    font-weight: 650;
+    font-size: 30px;
     padding-top: 3.5%;
     animation: fadeIn 1s;
+    margin-bottom: 0px;
   
 }
 
-
-
-/* Button for Calculating*/ 
+.button-row{
+    position: relative;
+    bottom: 60px; 
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+    gap: 10px; 
+}
+ 
 
 #calculate {
     position: relative;
-    
-    bottom: 50px;        
+        
+    bottom: 0;
+    margin: 0;
+    transition: all 0.2s ease;
     padding: 10px 0px;
+    width: 200px;
     font-size: 16px;
     font-weight: 600;
     border-radius: 10px;
     cursor: pointer;
     color: #000000;
     background-color: rgb(254, 211, 76);
+    border: 2px solid rgb(118, 118, 118); 
 }
+
+#clear_btn {
+    border: 2px solid rgb(118, 118, 118); 
+    width: 44px;   
+    height: 40px;  
+    background-color:  #e49b9b;
+    border-radius: 10px; 
+    cursor: pointer;
+    font-size: 18px;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+#clear_btn:hover {
+    background-color: #bb7272; 
+
+}
+
 
 #calculate:disabled {
     background-color: #C8C8C8;
@@ -85,6 +115,10 @@ h1 {
     top: 0;
 
     transition: 0.3s;
+}
+
+#calculate:hover:not([disabled]) {
+    background-color: rgb(190, 159, 54);
 }
 
 #calculate:hover:not([disabled]) span{
@@ -119,7 +153,6 @@ input{
     gap: 30px;              
 }
 
-/*parent of field and text*/
 #field_prompt_parent{
     position: absolute;
     display: flex;
@@ -129,9 +162,9 @@ input{
     width: 250px;
     margin-right: 10%;
     position: flex;
-    left: 50%;
+    left: 77%;
     transform: translate(-50%, 0%);
-    top: 35%;
+    top: 27%;
 
     animation: fadeIn 2s;
 }
@@ -156,7 +189,7 @@ input{
 #start_prompt_icon{
     position: absolute;
     align-items: right;
-    top: 9%;
+    top: 33%;
     left: 90%;
     gap: 40px;   
 }
@@ -164,7 +197,7 @@ input{
 #end_prompt_icon{
     position: absolute;
     align-items: right;
-    bottom: 46%;
+    bottom: 40%;
     left: 90%;
     gap: 40px;   
     
@@ -173,20 +206,19 @@ input{
 #result_parent{
 
     position: absolute;
-    top: 78%; 
+    top: 90%; 
     left: 50%; 
     transform: translate(-50%, -50%); 
-    animation: fadeIn 4s;
+    animation: fadeIn 2s;
    
 }
 
 #output{
+    color: #00438aff;
     text-align: right;
-    font-size: 33px;
-    font-weight: 600;
+    font-size: 23px;
+    font-weight: 750;
     white-space: nowrap;
-    color:rgb(234, 171, 0);
-    text-shadow: 1px 1px 2px rgb(0, 0, 0);
 
 }
 
@@ -198,3 +230,136 @@ input{
         opacity: 100%;
     }
   }
+
+#map-container {
+    width: 55%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9); 
+
+    border-right: 10px solid rgb(221, 180, 68);
+    overflow: hidden;
+    animation: fadeIn 2s;
+}
+
+.link {
+    stroke: #969696;   
+    stroke-width: 6px; 
+    stroke-linecap: round;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+
+.node circle:not(.closed):hover {
+    transform: scale(1.2); 
+    cursor: pointer;      
+    z-index: 100;     
+    fill: rgb(199, 199, 199);
+    transition: all 0.3s ease;
+}
+
+
+.node circle {
+    fill: white;
+    stroke: #333;
+    stroke-width: 3px;
+    r: 8; 
+    transition: all 0.3s ease;
+
+    transition: transform 0.2s ease, opacity 0.3s ease;
+    transform-box: fill-box; 
+    transform-origin: center; 
+}
+
+.node text {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+svg.focus-mode .link,
+svg.focus-mode .node {
+    opacity: 0.15;
+    filter: grayscale(100%);
+}
+
+
+svg.focus-mode .link.active,
+svg.focus-mode .node.active {
+    opacity: 1;
+    filter: grayscale(0%);
+}
+/*Thicker Paths */
+svg.focus-mode .link.active {
+    stroke-width: 10px; 
+    stroke: #ca9e25;   
+}
+
+/*Path and Node Statuses */
+.link.closed {
+    stroke: #d38a8a !important;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.node.closed circle {
+    fill: #ffffff;
+    stroke: #cc0000;
+    pointer-events: none;
+}
+.node.closed text {
+    fill: #cc0000;
+}
+
+/*Outside Edges*/
+.link.outside {
+    stroke-dasharray: 6;
+    stroke-linecap: butt;
+}
+
+/* If an element is active AND outside, make it Blue */
+svg.focus-mode .link.active.outside {
+    stroke: #007bff !important; 
+}
+
+/* Ensure closed elements stay dim even in focus mode */
+svg.focus-mode .link.closed,
+svg.focus-mode .node.closed {
+    opacity: 0.1;
+    filter: grayscale(100%);
+}
+
+/* Outside Button**/
+#outside_btn {
+    position: relative;
+    bottom: 60px; 
+    display: block;
+    margin: 0 auto;
+    
+    width: 250px;
+    padding: 10px 0;
+    font-size: 16px;
+    color: #000000;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    
+    background-color: #C8C8C8;
+    border: 2px solid rgb(118, 118, 118);
+    transition: all 0.2s ease;
+}
+
+#outside_btn:hover {
+    background-color: #f0f0f0;
+}
+
+#outside_btn.active-blue {
+    background-color: #007bff; 
+    color: white;
+    border-color: #0056b3;
+}
+
+#outside_btn.active-blue:hover {
+    background-color: #0056b3;
+}
