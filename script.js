@@ -299,6 +299,20 @@ function initMap() {
     nodeElements.append("text")
         .attr("dx", 12).attr("dy", ".35em").text(d => d.name);
 
+
+    // 5. Draw Map Title (Overlay)
+    svg.append("text")
+        .attr("x", width / 2)          // Centers text horizontally (800 / 2 = 400)
+        .attr("y", 50)                 // positions it 50px from the top
+        .attr("text-anchor", "middle") // Ensures it centers on the x-coordinate
+        .style("font-family", "Arial, sans-serif")
+        .style("font-size", "30px")    // Adjust size as needed
+        .style("font-weight", "bold")
+        .style("fill", "#b88701ff") // Matches your Gold theme
+        .style("stroke-width", "0.5px")
+        .text("University of Waterloo Tunnel and Bridge System Map");
+
+    
     // Store globally (existing code)
     window.mapVisuals = { svg, linkElements, nodeElements };
 }
@@ -427,7 +441,8 @@ window.onload = function() {
 document.addEventListener("keydown", function(event) {
     // 1. ENTER Key -> Find Path
     if (event.key === "Enter") {
-
+        // Prevent "Enter" from refreshing page if inside a form
+        event.preventDefault(); 
         calculatePath();
     }
     

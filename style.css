@@ -38,7 +38,7 @@ h1 {
 
 #main_subtext{
     top:10%;
-    color:#ca9400ff;
+    color:#b88701ff;
     font-weight: 650;
     font-size: 30px;
     padding-top: 3.5%;
@@ -168,7 +168,7 @@ input{
     position: flex;
     left: 77%;
     transform: translate(-50%, 0%);
-    top: 30%;
+    top: 27%;
 
     animation: fadeIn 2s;
 }
