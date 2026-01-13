@@ -11,6 +11,7 @@
     
 </head>
 <body>
+
     <!-- Display Map --> 
     <div id="map-container">
         <svg id="subway-map"></svg>
@@ -21,23 +22,41 @@
     <!-- Input Box --> 
     <div id="field_prompt_parent">
         <!-- Main Text --> 
-        <p id="main_subtext">UW Tunnel System Map</p>
+        <p id="main_subtext">System Pathfinder</p>
         <p id="prompt"> Start: </p>
         <p id="prompt"> Destination: </p>
         <input id = "start_txtfield" onchange="updateFieldColor()" placeholder = "..."> </input>
         <input id = "end_txtfield" onchange="updateFieldColor()" placeholder = "..."> </input>
-        <button  disabled = true id = "calculate" onclick="calculatePath()"><span>Find Path</span></button>
+        
+        <!-- Buttons -->
+        <div class="button-row">
+        <button disabled="true" id="calculate" onclick="calculatePath()">
+            <span>Find Path</span>
+        </button>
+        
+        <button id="clear_btn" onclick="clearMap()" title="Clear Map">
+            &#10006; 
+        </button>
+        </div>
+        
+   
+        <button id="outside_btn" onclick="toggleOutside()">
+        Use Outside Paths: Off
+        </button>
+
         <!-- Icon for Input-->
         <div id="prompt_icons">
             <p id="start_prompt_icon"></p>
             <p id="end_prompt_icon"></p>
         </div>
+
+        <!-- Warning Field --> 
+        <div id="result_parent">
+            <p id="output"></p>
+        </div>
     </div>
 
-    <!-- Text Field for Result --> 
-    <div id="result_parent">
-        <p id="output"></p>
-    </div>
+    
 
 
 </body>

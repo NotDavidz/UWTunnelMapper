@@ -21,10 +21,10 @@ const nodes = [
     //North Cluster
     new Building("EXP", ["LHI", "BMH"], 90, 90),
     new Building("BMH", ["LHI", "EXP"], 90, 180),
-    new Building("LHI", ["EXP", "BMH"], 180, 90),
+    new Building("LHI", ["EXP", "BMH", "PAC"], 180, 90),
     
     //Main Cluster
-    new Building("PAC", ["SLC"], 180, 180),
+    new Building("PAC", ["SLC", "LHI"], 180, 180),
     new Building("SLC", ["PAC", "MC"], 270, 180),
     new Building("MC", ["C2", "QNC", "SLC", "M4"], 360,180),
     new Building("M4", ["MC", "DC", "M3"], 450, 180),
@@ -37,7 +37,7 @@ const nodes = [
     new Building("B2", ["B1", "QNC", "STC"], 270, 360),
     new Building("B1", ["B2", "ESC"], 360,360),
     new Building("STC", ["NH", "B2"], 180, 450),
-    new Building("NH", ["STC"], 180, 540),
+    new Building("NH", ["STC", "EV3"], 180, 540),
     new Building("E3", ["CIM", "E2", "E5"], 630, 360),
     new Building("E5", ["E3", "E7"], 720, 270),
     new Building("E7", ["E6", "E5"], 720, 180),
@@ -45,54 +45,108 @@ const nodes = [
     new Building("EIT", ["CIM", "PHY", "ESC"], 540, 360),
     new Building("PHY", ["EIT", "E2"], 540, 450),
     new Building("E2", ["PHY", "E3", "CPH", "DWE", "RCH"], 630, 450),
-    new Building("DWE", ["RCH", "E2", "CPH", "RES"], 630, 540),
+    new Building("DWE", ["RCH", "E2", "CPH", "RES", "SCH"], 630, 540),
     new Building("RCH", ["E2", "DWE"], 540, 540),
     new Building("CPH", ["E2", "DWE"], 720, 450),
     new Building("RES", ["DWE"], 720, 630),
+    new Building("DP", ["AL"], 360, 540),
     
     //South Cluster
-    new Building("EV3", ["EV2"], 90, 630),
+    new Building("EV3", ["EV2", "NH"], 90, 630),
     new Building("EV2", ["EV3", "EV1", "PAS"], 180, 720),
     new Building("EV1", ["EV2", "AL", "HH", "ML"], 270, 630),
     new Building("HH", ["EV1"], 360, 720),
     new Building("PAS", ["EV2"], 270, 720),
     new Building("ML", ["AL", "EV1"], 270, 540),
     new Building("TC", ["AL", "SCH"], 450, 630),
-    new Building("AL", ["ML", "TC", "EV1"], 360, 630),
-    new Building("SCH", ["TC"], 540, 630)
+    new Building("AL", ["ML", "TC", "EV1", "DP"], 360, 630),
+    new Building("SCH", ["TC", "DWE"], 540, 630)
 ]
+
+// -------------------------- Closures and Special Tunnels------------------------------
+const closedBuildings = ["M4", "RES"]; 
+const closedTunnels = [["TC", "SCH"]]; 
+const outsideTunnels = [["PAC", "LHI"], ["DP", "AL"], ["EV3", "NH"], ["DWE", "SCH"]]; 
 
 
 // -------------------------- Helper Functions ------------------------------
+
+// 1. NEW: Function to toggle the button visual state
+function toggleOutside() {
+    const btn = document.getElementById("outside_btn");
+    
+    // Toggle the visual class
+    btn.classList.toggle("active-blue");
+
+    // Check if it is now active to change the text
+    if (btn.classList.contains("active-blue")) {
+        // Add Checkmark (✔)
+        btn.innerHTML = "Use Outside Paths: On";
+    } else {
+        // Reset to original text
+        btn.innerHTML = "Use Outside Paths: Off";
+    }
+}
 
 // Returns the Building corresponding to a name
 function findBuilding(name) {
     return nodes.find(node => node.name === name) || null;
 }
 
-// DFS algorithm that finds all the paths
-function findAllPaths(start, end, path = []) {
+function isBuildingClosed(name) {
+    return closedBuildings.includes(name);
+}
+
+function isTunnelClosed(nodeA, nodeB) {
+    const isClosed = closedTunnels.some(pair => 
+        (pair[0] === nodeA && pair[1] === nodeB) || 
+        (pair[0] === nodeB && pair[1] === nodeA)
+    );
+    return isClosed || isBuildingClosed(nodeA) || isBuildingClosed(nodeB);
+}
+
+function isOutsideTunnel(nodeA, nodeB) {
+    return outsideTunnels.some(pair => 
+        (pair[0] === nodeA && pair[1] === nodeB) || 
+        (pair[0] === nodeB && pair[1] === nodeA)
+    );
+}
+
+function findAllPaths(start, end, allowOutside = false, path = []) {
     path = [...path, start];
+
+    // Stop if start/end nodes are closed
+    if (isBuildingClosed(start) || isBuildingClosed(end)) return [];
 
     if (start === end) return [path];
 
     let allPaths = [];
     const currentBuilding = findBuilding(start);
+    if (!currentBuilding) return [];
 
     for (const neighbor of currentBuilding.outNeighbours) {
-        if (!path.includes(neighbor)) {
-            const newPaths = findAllPaths(neighbor, end, path);
-            allPaths = allPaths.concat(newPaths);
-        }
+        // Prevent cycles
+        if (path.includes(neighbor)) continue;
+
+        // Check if CLOSED
+        if (isTunnelClosed(start, neighbor)) continue;
+
+        // Check if OUTSIDE (skip if outside is not allowed)
+        if (isOutsideTunnel(start, neighbor) && !allowOutside) continue;
+
+        const newPaths = findAllPaths(neighbor, end, allowOutside, path);
+        allPaths = allPaths.concat(newPaths);
     }
 
     return allPaths;
 }
 
+
 // Sort the paths from shortest to longest
 function sortPaths(paths) {
     return paths.sort((a, b) => a.length - b.length);
 }
+
 
 function updateFieldColor(){
     console.log("Hello!");
@@ -160,144 +214,236 @@ function updateOutput(args){
 
 // -------------------------- Main Functions ----------------------------------
 
-function calculatePath(){
+// ==========================================
+// 4. MAP VISUALIZATION (D3)
+// ==========================================
 
-    let start = (document.getElementById("start_txtfield").value).toUpperCase();
-    let end = (document.getElementById("end_txtfield").value).toUpperCase();
+function initMap() {
+    // 1. Generate Links Data
+    const links = [];
+    nodes.forEach(source => {
+        source.outNeighbours.forEach(targetName => {
+            const target = findBuilding(targetName);
+            if (target) {
+                links.push({ source: source, target: target });
+            }
+        });
+    });
 
-    if (start == "" || end == ""){
-        return;
-    }
+    // 2. Setup SVG
+    const width = 800;
+    const height = 800;
+    const svg = d3.select("#subway-map")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .attr("width", "100%")
+        .attr("height", "100%"); 
 
-    if (!findBuilding(start)){
-        alert(`There is no such building as ${start}`);
-        return;
-    }else if(!findBuilding(end)){
-        alert(`There is no such building as ${end}`);
-        return;
-    }
+    const g = svg.append("g"); 
 
-    let allPaths = findAllPaths(start, end);
-    if (allPaths.length > 0) {
-        allPaths = sortPaths(allPaths);
-        path = allPaths[0].join(" » ") + "\n";
-        //alert(`The most efficient path from ${start} to ${end}: \n ${path}`);
-        updateOutput(path);
+    // 3. Draw Links
+    const linkElements = g.selectAll(".link")
+        .data(links)
+        .enter().append("line")
+        .attr("class", d => {
+            let classes = "link";
+            const u = d.source.name;
+            const v = d.target.name;
+
+            // Priority 1: Closed (Red)
+            if (isTunnelClosed(u, v)) return "link closed";
+            
+            // Priority 2: Outside (Dashed)
+            if (isOutsideTunnel(u, v)) classes += " outside";
+            
+            return classes;
+        })
+        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+    // 4. Draw Nodes
+
+    const nodeElements = g.selectAll(".node")
+        .data(nodes)
+        .enter().append("g")
+        .attr("class", d => isBuildingClosed(d.name) ? "node closed" : "node")
+        .attr("id", d => `node-${d.name}`)
+        .attr("transform", d => `translate(${d.x},${d.y})`)
+        .style("cursor", "pointer") // Makes mouse look like a hand pointer
         
-    } else {
-        alert(`No paths found from ${start} to ${end}.`);
-    }
+        // --- CLICK EVENT LISTENER ---
+        .on("click", function(event, d) {
+            // Get current values
+            const startInput = document.getElementById("start_txtfield");
+            const endInput = document.getElementById("end_txtfield");
+            
+            // Logic: Where should we put this building name?
+            if (startInput.value === "") {
+                // 1. If Start is empty, fill Start
+                startInput.value = d.name;
+            } else if (endInput.value === "") {
+                // 2. If Start is full but End is empty, fill End
+                endInput.value = d.name;
+            } else {
+                // 3. If both are full, overwrite Destination
+                endInput.value = d.name;
+            }
+
+            // Update visuals (Green box/Checkmark)
+            if (typeof updateFieldColor === "function") {
+                updateFieldColor();
+            }
+        });
+
+    nodeElements.append("circle").attr("r", 8);
+    nodeElements.append("text")
+        .attr("dx", 12).attr("dy", ".35em").text(d => d.name);
+
+    // Store globally (existing code)
+    window.mapVisuals = { svg, linkElements, nodeElements };
 }
 
-function myFunction() {
-    document.getElementById("myDropdown").classList.toggle("show");
-  }
+// ==========================================
+// 5. USER INTERACTION
+// ==========================================
 
-
-
-
-
-//Convert graph to links
-const links = [];
-nodes.forEach(node => {
-    node.outNeighbours.forEach(targetName => {
-        const targetNode = nodes.find(n => n.name === targetName);
-        if (targetNode) {
-            links.push({
-                source: node,
-                target: targetNode,
-                id: `${node.name}-${targetNode.name}` // Unique ID for the edge
-            });
-        }
-    });
-});
-
-//Setup SVG
-const width = 800;
-const height = 800;
-const svg = d3.select("#subway-map")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("preserveAspectRation", "xMidYMid meet")
-    .attr("width", "100%")
-    .attr("height", "100%");
-
-const g = svg.append("g"); 
-
-//Draw Edges
-const linkElements = g.selectAll(".link")
-    .data(links)
-    .enter().append("line")
-    .attr("class", "link")
-    .attr("x1", d => d.source.x)
-    .attr("y1", d => d.source.y)
-    .attr("x2", d => d.target.x)
-    .attr("y2", d => d.target.y);
-
-//Draw Nodes
-const nodeElements = g.selectAll(".node")
-    .data(nodes)
-    .enter().append("g")
-    .attr("class", "node")
-    .attr("transform", d => `translate(${d.x},${d.y})`);
-
-nodeElements.append("circle");
-
-nodeElements.append("text")
-    .attr("dx", 12)
-    .attr("dy", ".35em")
-    .text(d => d.name);
-
-// --- UPDATE HIGHLIGHT LOGIC ---
-
-// Override or update your existing calculatePath function
-const originalCalculatePath = calculatePath; // Keep your old logic if needed
-
-calculatePath = function() {
-    // 1. Run your existing logic to get text output
-    let startInput = document.getElementById("start_txtfield").value.toUpperCase();
-    let endInput = document.getElementById("end_txtfield").value.toUpperCase();
+function calculatePath() {
+    let start = document.getElementById("start_txtfield").value.toUpperCase();
+    let end = document.getElementById("end_txtfield").value.toUpperCase();
+    const outputText = document.getElementById("output");
     
-    // Check validity using your existing helpers
-    if (!findBuilding(startInput) || !findBuilding(endInput)) {
+    // --- UPDATED LINE ---
+    // Check if the button has the blue class
+    const btn = document.getElementById("outside_btn");
+    const useOutside = btn ? btn.classList.contains("active-blue") : false;
+
+    if (!findBuilding(start) || !findBuilding(end)) {
         alert("Invalid buildings");
         return;
     }
 
-    // 2. Get the path array (e.g., ["EXP", "LHI", "PAC"])
-    let allPaths = findAllPaths(startInput, endInput);
-    if (allPaths.length === 0) return;
-    
-    let bestPath = sortPaths(allPaths)[0]; // Get shortest path array
-    
-    updateOutput(bestPath.join(" » ")); // Update text
+    // ... (Rest of your calculatePath logic stays exactly the same) ...
+    let allPaths = findAllPaths(start, end, useOutside);
+    let forcedOutside = false;
 
-    // 3. VISUAL HIGHLIGHTING
-    const svg = d3.select("#subway-map");
+    if (allPaths.length === 0 && !useOutside) {
+        const outsidePaths = findAllPaths(start, end, true);
+        if (outsidePaths.length > 0) {
+            allPaths = outsidePaths;
+            forcedOutside = true;
+        }
+    }
     
-    // A. Turn on Focus Mode (grays out everything)
+    if (allPaths.length > 0) {
+        let bestPath = sortPaths(allPaths)[0];
+        let msg = "";
+
+        if (forcedOutside) {
+            msg = "⚠️ Outdoor path in use (No indoor route)<br>";
+            outputText.innerHTML = msg; 
+            outputText.style.color = "#00438aff"; 
+        } else {
+            outputText.textContent = msg;
+            outputText.style.color = "rgb(234, 171, 0)"; 
+        }
+
+        highlightMap(bestPath);
+    } else {
+        alert("No path found (Check for closed buildings/tunnels).");
+        clearMapVisualsOnly();
+    }
+}
+
+function highlightMap(pathArray) {
+    if (!window.mapVisuals) return;
+    const { svg, linkElements, nodeElements } = window.mapVisuals;
+    
+    // Dim Everything
     svg.classed("focus-mode", true);
     
-    // B. Reset previous highlights
+    // Reset previous actives
     svg.selectAll(".active").classed("active", false);
 
-    // C. Highlight Nodes in the path
-    nodeElements.filter(d => bestPath.includes(d.name))
+    // Highlight Nodes
+    nodeElements.filter(d => pathArray.includes(d.name))
         .classed("active", true);
 
-    // D. Highlight Edges (Links) in the path
-    linkElements.filter(d => {
+    // Highlight Edges
+    linkElements.each(function(d) {
+        const u = d.source.name;
+        const v = d.target.name;
+        
+        let isPathEdge = false;
         // Check if this link connects two nodes that are adjacent in the path
-        // We iterate through the path to find pairs: [A, B], [B, C]...
-        for (let i = 0; i < bestPath.length - 1; i++) {
-            const u = bestPath[i];
-            const v = bestPath[i+1];
-            
-            // Check direction (since your graph is directed/undirected mix)
-            if ((d.source.name === u && d.target.name === v) || 
-                (d.source.name === v && d.target.name === u)) {
-                return true;
+        for (let i = 0; i < pathArray.length - 1; i++) {
+            if ((pathArray[i] === u && pathArray[i+1] === v) || 
+                (pathArray[i] === v && pathArray[i+1] === u)) {
+                isPathEdge = true;
+                break;
             }
         }
-        return false;
-    }).classed("active", true);
+
+        if (isPathEdge) {
+            d3.select(this).classed("active", true);
+        }
+    });
 }
+
+// 3. UPDATE: clearMap (Turn off the blue button)
+function clearMap() {
+    document.getElementById("start_txtfield").value = "";
+    document.getElementById("end_txtfield").value = "";
+    
+    // --- RESET TOGGLE BUTTON ---
+    const btn = document.getElementById("outside_btn");
+    if (btn) {
+        btn.classList.remove("active-blue"); // Remove Blue Color
+        btn.innerHTML = "Use Outside Paths: Off"; // Remove Checkmark
+    }
+    
+    const output = document.getElementById("output");
+    output.textContent = "";
+    
+    if (typeof updateFieldColor === "function") {
+        updateFieldColor(); 
+    }
+    
+    clearMapVisualsOnly();
+}
+function clearMapVisualsOnly() {
+    if (window.mapVisuals) {
+        const { svg } = window.mapVisuals;
+        svg.classed("focus-mode", false);
+        svg.selectAll(".active").classed("active", false);
+    }
+}
+
+// Initialize on load
+window.onload = function() {
+    initMap();
+};
+
+// --- KEYBOARD SHORTCUTS ---
+document.addEventListener("keydown", function(event) {
+    // 1. ENTER Key -> Find Path
+    if (event.key === "Enter") {
+
+        calculatePath();
+    }
+    
+    // 2. 'O' or 'o' Key -> Toggle Outside Mode
+    // We check if the user is NOT typing in a text box (to avoid typing 'o' in a name)
+    else if (event.key.toLowerCase() === "o") {
+        const activeTag = document.activeElement.tagName;
+        if (activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
+            toggleOutside();
+        }
+    }
+
+    // 3. ESCAPE Key -> Clear Map
+    else if (event.key === "Escape") {
+        clearMap();
+        // Optional: Remove focus from inputs so you can use 'O' immediately
+        document.activeElement.blur(); 
+    }
+});

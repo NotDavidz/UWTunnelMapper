@@ -37,31 +37,65 @@ h1 {
 
 
 #main_subtext{
-    color:rgb(234, 171, 0);
-    text-shadow: 1px 1px 2px rgb(0, 0, 0);
-    font-weight: 600;
+    top:10%;
+    color:#ca9400ff;
+    font-weight: 650;
     font-size: 30px;
     padding-top: 3.5%;
     animation: fadeIn 1s;
+    margin-bottom: 0px;
   
 }
 
-
+.button-row{
+    position: relative;
+    bottom: 60px; /* This moves both buttons up together */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centers them horizontally */
+    gap: 10px; /* Space between the big button and the square button */
+}
 
 /* Button for Calculating*/ 
 
 #calculate {
     position: relative;
-    
-    bottom: 50px;        
+        
+    bottom: 0;
+    margin: 0;
+    transition: all 0.2s ease;
     padding: 10px 0px;
+    width: 200px;
     font-size: 16px;
     font-weight: 600;
     border-radius: 10px;
     cursor: pointer;
     color: #000000;
     background-color: rgb(254, 211, 76);
+    border: 2px solid rgb(118, 118, 118); /* Standard Grey Border */
 }
+
+/* New Square Clear Button Style */
+#clear_btn {
+    border: 2px solid rgb(118, 118, 118); /* Standard Grey Border */
+    width: 44px;   
+    height: 40px;  
+    background-color:  #e49b9b;
+    border-radius: 10px; 
+    cursor: pointer;
+    font-size: 18px;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+#clear_btn:hover {
+    background-color: #bb7272; /* Light red hover */
+
+}
+
 
 #calculate:disabled {
     background-color: #C8C8C8;
@@ -84,6 +118,10 @@ h1 {
     top: 0;
 
     transition: 0.3s;
+}
+
+#calculate:hover:not([disabled]) {
+    background-color: rgb(190, 159, 54);
 }
 
 #calculate:hover:not([disabled]) span{
@@ -155,7 +193,7 @@ input{
 #start_prompt_icon{
     position: absolute;
     align-items: right;
-    top: 43%;
+    top: 33%;
     left: 90%;
     gap: 40px;   
 }
@@ -163,7 +201,7 @@ input{
 #end_prompt_icon{
     position: absolute;
     align-items: right;
-    bottom: 29%;
+    bottom: 40%;
     left: 90%;
     gap: 40px;   
     
@@ -172,20 +210,19 @@ input{
 #result_parent{
 
     position: absolute;
-    top: 78%; 
+    top: 90%; 
     left: 50%; 
     transform: translate(-50%, -50%); 
-    animation: fadeIn 4s;
+    animation: fadeIn 2s;
    
 }
 
 #output{
+    color: #00438aff;
     text-align: right;
-    font-size: 33px;
-    font-weight: 600;
+    font-size: 23px;
+    font-weight: 750;
     white-space: nowrap;
-    color:rgb(234, 171, 0);
-    text-shadow: 1px 1px 2px rgb(0, 0, 0);
 
 }
 
@@ -209,16 +246,27 @@ input{
 
     border-right: 10px solid rgb(221, 180, 68);
     overflow: hidden;
+    animation: fadeIn 2s;
 }
 
 /* 1. Default Graph Styles */
 .link {
-    stroke: #858585;      /* Dark grey lines */
+    stroke: #969696;      /* Dark grey lines */
     stroke-width: 6px; /* Thick "Subway" style */
     stroke-linecap: round;
     opacity: 0.8;
     transition: all 0.3s ease;
 }
+
+/* Grow the node when hovered */
+.node circle:not(.closed):hover {
+    transform: scale(1.2); /* 1.5x bigger */
+    cursor: pointer;       /* Shows a hand cursor */
+    z-index: 100;          /* Ensures it pops on top of other elements */
+    fill: rgb(199, 199, 199);
+    transition: all 0.3s ease;
+}
+
 
 .node circle {
     fill: white;
@@ -226,6 +274,10 @@ input{
     stroke-width: 3px;
     r: 8; /* Radius of station dot */
     transition: all 0.3s ease;
+
+    transition: transform 0.2s ease, opacity 0.3s ease;
+    transform-box: fill-box; /* Ensures scaling happens from center of the node */
+    transform-origin: center; 
 }
 
 .node text {
@@ -238,7 +290,7 @@ input{
 /* 2. Focus Mode (Grays out everything) */
 svg.focus-mode .link,
 svg.focus-mode .node {
-    opacity: 0.1;
+    opacity: 0.15;
     filter: grayscale(100%);
 }
 
@@ -252,4 +304,84 @@ svg.focus-mode .node.active {
 svg.focus-mode .link.active {
     stroke-width: 10px; /* Make the path thicker */
     stroke: #ca9e25;    /* Gold path color */
+}
+
+/* --- NEW STYLES FOR STATUSES --- */
+
+/* 1. Closed/Obstructed Elements (Light Red) */
+.link.closed {
+    stroke: #d38a8a !important; /* Force red override */
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.node.closed circle {
+    fill: #ffffff;
+    stroke: #cc0000;
+    pointer-events: none;
+}
+.node.closed text {
+    fill: #cc0000;
+}
+
+/* 2. Outside Edges (Dashed) */
+.link.outside {
+    stroke-dasharray: 6; /* Dashed line */
+    stroke-linecap: butt;
+}
+
+/* 3. Focus Mode Updates */
+/* If an element is active AND outside, make it Blue */
+svg.focus-mode .link.active.outside {
+    stroke: #007bff !important; 
+}
+
+/* Ensure closed elements stay dim even in focus mode */
+svg.focus-mode .link.closed,
+svg.focus-mode .node.closed {
+    opacity: 0.1;
+    filter: grayscale(100%);
+}
+
+/* Outside Button**/
+
+/* Style for the new toggle button */
+#outside_btn {
+    position: relative;
+    /* Move it up slightly to sit tight under the row */
+    bottom: 60px; 
+    
+    /* Center it */
+    display: block;
+    margin: 0 auto;
+    
+    /* Visual Style (Matches other buttons) */
+    width: 250px; /* Matches width of Find Path (140) + Gap (10) + Clear (44) */
+    padding: 10px 0;
+    font-size: 16px;
+    color: #000000;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    
+    /* Default State (Off) */
+    background-color: #C8C8C8;
+    border: 2px solid rgb(118, 118, 118);
+    transition: all 0.2s ease;
+}
+
+/* Hover Effect */
+#outside_btn:hover {
+    background-color: #f0f0f0;
+}
+
+/* === ACTIVE STATE (Blue) === */
+#outside_btn.active-blue {
+    background-color: #007bff; /* Bright Blue */
+    color: white;
+    border-color: #0056b3;
+}
+
+#outside_btn.active-blue:hover {
+    background-color: #0056b3; /* Darker Blue on Hover */
 }
