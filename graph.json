@@ -1,0 +1,53 @@
+{
+  "buildings": [
+    {"name": "EXP", "neighbours": ["LHI", "BMH"], "x": 90, "y": 90},
+    {"name": "LHI", "neighbours": ["EXP", "BMH", "PAC"], "x": 180, "y": 90},
+    {"name": "BMH", "neighbours": ["LHI", "EXP"], "x": 90, "y": 180},
+    {"name": "PAC", "neighbours": ["LHI", "SLC"], "x": 180, "y": 180},
+    {"name": "SLC", "neighbours": ["PAC", "MC"], "x": 270, "y": 180},
+    {"name": "MC", "neighbours": ["C2", "QNC", "SLC"], "x": 360, "y": 180},
+    {"name": "C2", "neighbours": ["MC", "DC", "ESC"], "x": 450, "y": 270},
+    {"name": "DC", "neighbours": ["C2", "CIM", "M3"], "x": 540, "y": 180},
+    {"name": "M4", "neighbours": [], "x": 450, "y": 180},
+    {"name": "M3", "neighbours": ["DC"], "x": 450, "y": 90},
+    {"name": "QNC", "neighbours": ["MC", "B2", "STC"], "x": 270, "y": 270},
+    {"name": "B2", "neighbours": ["B1", "QNC"], "x": 270, "y": 360},
+    {"name": "B1", "neighbours": ["B2", "ESC"], "x": 360, "y": 360},
+    {"name": "STC", "neighbours": ["NH", "B2"], "x": 180, "y": 450},
+    {"name": "NH", "neighbours": ["STC"], "x": 180, "y": 540},
+    {"name": "ESC", "neighbours": ["C2", "B1", "EIT"], "x": 450, "y": 360},
+    {"name": "EIT", "neighbours": ["CIM", "PHY", "ESC"], "x": 540, "y": 360},
+    {"name": "CIM", "neighbours": ["DC", "EIT", "E3"], "x": 540, "y": 270},
+    {"name": "PHY", "neighbours": ["EIT", "E2"], "x": 540, "y": 450},
+    {"name": "RCH", "neighbours": ["E2", "DWE"], "x": 540, "y": 540},
+    {"name": "DWE", "neighbours": ["RCH", "E2", "SCH"], "x": 630, "y": 540},
+    {"name": "CPH", "neighbours": ["E2"], "x": 720, "y": 450},
+    {"name": "E2", "neighbours": ["PHY", "E3", "CPH", "DWE", "RCH"], "x": 630, "y": 450},
+    {"name": "E3", "neighbours": ["CIM", "E2", "E5"], "x": 630, "y": 360},
+    {"name": "E5", "neighbours": ["E3", "E7"], "x": 720, "y": 270},
+    {"name": "E6", "neighbours": ["E7"], "x": 720, "y": 90},
+    {"name": "E7", "neighbours": ["E6", "E5"], "x": 720, "y": 180},
+    {"name": "EV3", "neighbours": ["EV2"], "x": 90, "y": 630},
+    {"name": "EV2", "neighbours": ["EV3", "EV1"], "x": 180, "y": 720},
+    {"name": "EV1", "neighbours": ["EV2", "AL"], "x": 270, "y": 630},
+    {"name": "AL", "neighbours": ["LIB", "ML"], "x": 360, "y": 630},
+    {"name": "ML", "neighbours": ["AL"], "x": 270, "y": 540},
+    {"name": "LIB", "neighbours": ["AL"], "x": 360, "y": 540},
+    {"name": "TC", "neighbours": ["AL", "HH", "SCH"], "x": 450, "y": 630},
+    {"name": "PAS", "neighbours": ["HH"], "x": 270, "y": 720},
+    {"name": "HH", "neighbours": ["TC", "PAS"], "x": 360, "y": 720},
+    {"name": "SCH", "neighbours": ["TC", "DWE"], "x": 540, "y": 630}
+  ],
+  "closedBuildings": ["M4"],
+  "closedTunnels": [],
+  "outsideTunnels": [
+    ["PAC", "LHI"],
+    ["EV3", "NH"],
+    ["DWE", "SCH"]
+  ],
+  "metadata": {
+    "name": "University of Waterloo Tunnel System",
+    "version": "2.0",
+    "description": "Shared graph data for tunnel pathfinder"
+  }
+}
