@@ -1,11 +1,10 @@
-
 // -------------------------- Building Definition ------------------------------
 
 class Building {
-    constructor(name, outNeighbours, x, y) {
+    constructor(name, neighbours, x, y) {
         this._name = name;
-        this.outNeighbours = outNeighbours;
-        this.x = x; 
+        this.neighbours = neighbours;
+        this.x = x;
         this.y = y;
     }
 
@@ -14,67 +13,173 @@ class Building {
     }
 }
 
+// -------------------------- Graph Manager ------------------------------
 
-// -------------------------- Graph Definition ------------------------------
+class TunnelGraph {
+    constructor() {
+        this.buildings = new Map();
+        this.closedBuildings = new Set();
+        this.closedTunnels = new Set();
+        this.outsideTunnels = new Set();
+        this.graphData = null;
+    }
 
-const nodes = [
-    //North Cluster
-    new Building("EXP", ["LHI", "BMH"], 90, 90),
-    new Building("BMH", ["LHI", "EXP"], 90, 180),
-    new Building("LHI", ["EXP", "BMH", "PAC"], 180, 90),
-    
-    //Main Cluster
-    new Building("PAC", ["SLC", "LHI"], 180, 180),
-    new Building("SLC", ["PAC", "MC"], 270, 180),
-    new Building("MC", ["C2", "QNC", "SLC", "M4"], 360,180),
-    new Building("M4", ["MC", "DC", "M3"], 450, 180),
-    new Building("M3", ["DC", "M4"], 450, 90),
-    new Building("DC", ["C2", "CIM", "M3", "M4"], 540, 180),
-    new Building("QNC", ["MC", "B2"], 270,270),
-    new Building("C2", ["MC", "DC", "ESC"], 450, 270),
-    new Building("CIM", ["DC", "EIT", "E3"], 540, 270),
-    new Building("ESC", ["C2", "B1", "EIT"], 450, 360),
-    new Building("B2", ["B1", "QNC", "STC"], 270, 360),
-    new Building("B1", ["B2", "ESC"], 360,360),
-    new Building("STC", ["NH", "B2"], 180, 450),
-    new Building("NH", ["STC", "EV3"], 180, 540),
-    new Building("E3", ["CIM", "E2", "E5"], 630, 360),
-    new Building("E5", ["E3", "E7"], 720, 270),
-    new Building("E7", ["E6", "E5"], 720, 180),
-    new Building("E6", ["E7"], 720, 90),
-    new Building("EIT", ["CIM", "PHY", "ESC"], 540, 360),
-    new Building("PHY", ["EIT", "E2"], 540, 450),
-    new Building("E2", ["PHY", "E3", "CPH", "DWE", "RCH"], 630, 450),
-    new Building("DWE", ["RCH", "E2", "CPH", "RES", "SCH"], 630, 540),
-    new Building("RCH", ["E2", "DWE"], 540, 540),
-    new Building("CPH", ["E2", "DWE"], 720, 450),
-    new Building("RES", ["DWE"], 720, 630),
-    new Building("DP", ["AL"], 360, 540),
-    
-    //South Cluster
-    new Building("EV3", ["EV2", "NH"], 90, 630),
-    new Building("EV2", ["EV3", "EV1", "PAS"], 180, 720),
-    new Building("EV1", ["EV2", "AL", "HH", "ML"], 270, 630),
-    new Building("HH", ["EV1"], 360, 720),
-    new Building("PAS", ["EV2"], 270, 720),
-    new Building("ML", ["AL", "EV1"], 270, 540),
-    new Building("TC", ["AL", "SCH"], 450, 630),
-    new Building("AL", ["ML", "TC", "EV1", "DP"], 360, 630),
-    new Building("SCH", ["TC", "DWE"], 540, 630)
-]
+    async loadGraph(url = 'graph.json') {
+        try {
+            const response = await fetch(url);
+            this.graphData = await response.json();
+            
+            // Build buildings map for O(1) lookup
+            for (const bdata of this.graphData.buildings) {
+                const building = new Building(
+                    bdata.name,
+                    bdata.neighbours || [],
+                    bdata.x || 0,
+                    bdata.y || 0
+                );
+                this.buildings.set(building.name, building);
+            }
+            
+            // Load closed buildings
+            this.closedBuildings = new Set(this.graphData.closedBuildings || []);
+            
+            // Convert tunnel pairs to strings for bidirectional lookup
+            for (const pair of (this.graphData.closedTunnels || [])) {
+                this.closedTunnels.add(this._tunnelKey(...pair));
+            }
+            for (const pair of (this.graphData.outsideTunnels || [])) {
+                this.outsideTunnels.add(this._tunnelKey(...pair));
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Failed to load graph:', error);
+            return false;
+        }
+    }
 
-// -------------------------- Closures and Special Tunnels------------------------------
-const closedBuildings = ["M4", "RES"]; 
-const closedTunnels = [["TC", "SCH"]]; 
-const outsideTunnels = [["PAC", "LHI"], ["DP", "AL"], ["EV3", "NH"], ["DWE", "SCH"]]; 
+    _tunnelKey(a, b) {
+        // Create consistent key regardless of order
+        return [a, b].sort().join('-');
+    }
 
+    findBuilding(name) {
+        return this.buildings.get(name) || null;
+    }
 
-// -------------------------- Helper Functions ------------------------------
+    isBuildingClosed(name) {
+        return this.closedBuildings.has(name);
+    }
 
-//Toggle function for outside button
+    isTunnelClosed(a, b) {
+        if (this.isBuildingClosed(a) || this.isBuildingClosed(b)) {
+            return true;
+        }
+        return this.closedTunnels.has(this._tunnelKey(a, b));
+    }
+
+    isOutsideTunnel(a, b) {
+        return this.outsideTunnels.has(this._tunnelKey(a, b));
+    }
+
+    findShortestPath(start, end, allowOutside = false) {
+        // BFS for optimal shortest path (O(V+E))
+        const startBuilding = this.findBuilding(start);
+        const endBuilding = this.findBuilding(end);
+
+        if (!startBuilding || !endBuilding) return null;
+        if (this.isBuildingClosed(start) || this.isBuildingClosed(end)) return null;
+        if (start === end) return [start];
+
+        const queue = [[start, [start]]];
+        const visited = new Set([start]);
+
+        while (queue.length > 0) {
+            const [current, path] = queue.shift();
+            const building = this.findBuilding(current);
+
+            if (!building) continue;
+
+            for (const neighbor of building.neighbours) {
+                if (visited.has(neighbor)) continue;
+                if (this.isTunnelClosed(current, neighbor)) continue;
+                if (!allowOutside && this.isOutsideTunnel(current, neighbor)) continue;
+
+                if (neighbor === end) {
+                    return path.concat(neighbor);
+                }
+
+                visited.add(neighbor);
+                queue.push([neighbor, path.concat(neighbor)]);
+            }
+        }
+
+        return null;
+    }
+
+    findAllPaths(start, end, allowOutside = false) {
+        // DFS for all paths (exponential - use for debugging only)
+        if (start === end) return [[start]];
+        if (!this.findBuilding(start) || this.isBuildingClosed(start)) return [];
+
+        const allPaths = [];
+
+        const dfs = (current, path) => {
+            if (current === end) {
+                allPaths.push([...path]);
+                return;
+            }
+
+            const building = this.findBuilding(current);
+            if (!building) return;
+
+            for (const neighbor of building.neighbours) {
+                if (path.includes(neighbor)) continue;
+                if (this.isTunnelClosed(current, neighbor)) continue;
+                if (!allowOutside && this.isOutsideTunnel(current, neighbor)) continue;
+
+                path.push(neighbor);
+                dfs(neighbor, path);
+                path.pop();
+            }
+        };
+
+        dfs(start, [start]);
+        return allPaths.sort((a, b) => a.length - b.length);
+    }
+}
+
+// Global graph instance
+const graph = new TunnelGraph();
+
+// -------------------------- Utility Functions ------------------------------
+
+// Sanitize user input to prevent XSS
+function sanitizeInput(input) {
+    // Remove HTML tags
+    input = input.replace(/<[^>]*>/g, '');
+    // Only allow alphanumeric and spaces
+    input = input.replace(/[^A-Z0-9\s]/gi, '');
+    return input.trim().toUpperCase();
+}
+
+// Debounce function for input handlers
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// -------------------------- UI Functions ------------------------------
+
 function toggleOutside() {
     const btn = document.getElementById("outside_btn");
-    
     btn.classList.toggle("active-blue");
 
     if (btn.classList.contains("active-blue")) {
@@ -84,165 +189,72 @@ function toggleOutside() {
     }
 }
 
-// Returns the Building corresponding to a name
-function findBuilding(name) {
-    return nodes.find(node => node.name === name) || null;
-}
-
-// Returns if a building is closed or not
-function isBuildingClosed(name) {
-    return closedBuildings.includes(name);
-}
-
-// Returns if a tunnel is closed or not
-function isTunnelClosed(nodeA, nodeB) {
-
-    //Check if its in the array
-    const isClosed = closedTunnels.some(pair => 
-        (pair[0] === nodeA && pair[1] === nodeB) || 
-        (pair[0] === nodeB && pair[1] === nodeA)
-    );
-
-    return isClosed || isBuildingClosed(nodeA) || isBuildingClosed(nodeB);
-}
-
-// Returns if a tunnel is outdoors
-function isOutsideTunnel(nodeA, nodeB) {
-    return outsideTunnels.some(pair => 
-        (pair[0] === nodeA && pair[1] === nodeB) || 
-        (pair[0] === nodeB && pair[1] === nodeA)
-    );
-}
-
-// Finds all the avaliable paths
-function findAllPaths(start, end, allowOutside = false, path = []) {
-    path = [...path, start];
-
-    // Stop if start/end nodes are closed
-    if (isBuildingClosed(start) || isBuildingClosed(end)) return [];
-
-    if (start === end) return [path];
-
-    let allPaths = [];
-    const currentBuilding = findBuilding(start);
-    if (!currentBuilding) return [];
-
-    for (const neighbor of currentBuilding.outNeighbours) {
-        // Prevent cycles
-        if (path.includes(neighbor)) continue;
-
-        // Check if closed or outside
-        if (isTunnelClosed(start, neighbor)) continue;
-        if (isOutsideTunnel(start, neighbor) && !allowOutside) continue;
-
-        const newPaths = findAllPaths(neighbor, end, allowOutside, path);
-        allPaths = allPaths.concat(newPaths);
-    }
-
-    return allPaths;
-}
-
-
-// Sort the paths from shortest to longest
-function sortPaths(paths) {
-    return paths.sort((a, b) => a.length - b.length);
-}
-
-//Updates the textboxes' color
-function updateFieldColor(){
-    console.log("Hello!");
-    var start_input = document.getElementById("start_txtfield");
-    var end_input = document.getElementById("end_txtfield");
-    var start_icon = document.getElementById("start_prompt_icon");
-    var end_icon = document.getElementById("end_prompt_icon");
-    var acc = 0;
-
-    let start = (start_input.value).toUpperCase();
-    let end = (end_input.value).toUpperCase();
-
-    //Inc if its not there
-    acc+= updateFieldHelper(start_input, start_icon, buildingExist(start));
-    acc+= updateFieldHelper(end_input, end_icon, buildingExist(end));
-
-    if (acc){
-        document.getElementById("calculate").disabled = true;
-  
-    }else{
-        document.getElementById("calculate").disabled = false;
-
-    }
-
-}
-
-// Update the field status indicator
-function updateFieldHelper(input, icon, status){
-    if (status){
+function updateFieldHelper(input, icon, valid) {
+    if (valid) {
         input.style.backgroundColor = "#c1deb5";
         icon.textContent = "✅";
         return 0;
-    }else if ((input.value).toUpperCase() == ""){
+    } else if (input.value === "") {
         input.style.backgroundColor = "#ffffff";
         icon.textContent = "";
         return 1;
-    }else{
+    } else {
         input.style.backgroundColor = "#edcfcb";
         icon.textContent = "❌";
         return 1;
     }
-    
 }
 
-//Check if a build exists
-function buildingExist(name){
-    for (var i = 0; i < nodes.length; i++){
-        console.log(nodes[i]);
-        console.log(nodes[i].name);
-        if (name === nodes[i].name){
-            return true;
-        }
-    }
-    return false;
+function updateFieldColor() {
+    const startInput = document.getElementById("start_txtfield");
+    const endInput = document.getElementById("end_txtfield");
+    const startIcon = document.getElementById("start_prompt_icon");
+    const endIcon = document.getElementById("end_prompt_icon");
+
+    const start = sanitizeInput(startInput.value);
+    const end = sanitizeInput(endInput.value);
+
+    const startValid = graph.findBuilding(start) !== null;
+    const endValid = graph.findBuilding(end) !== null;
+
+    const acc = updateFieldHelper(startInput, startIcon, startValid) +
+                updateFieldHelper(endInput, endIcon, endValid);
+
+    const calculateBtn = document.getElementById("calculate");
+    calculateBtn.disabled = acc !== 0;
 }
 
-//Deprecated function
-function updateOutput(args){
-    return;
-    var output = document.getElementById("output");
-    output.textContent = args;
+// Debounced version for better performance
+const debouncedUpdateFieldColor = debounce(updateFieldColor, 150);
 
-    output.style.animation = 'none';
-    void output.offsetWidth; 
-    output.style.animation="fadeIn 1s";
-}
+// -------------------------- Map Visualization ------------------------------
 
-// -------------------------- Main Functions ----------------------------------
-
-//Initialize the Map
 function initMap() {
+    const nodes = Array.from(graph.buildings.values());
 
-    //Generate the links
+    // Generate links
     const links = [];
     nodes.forEach(source => {
-        source.outNeighbours.forEach(targetName => {
-            const target = findBuilding(targetName);
+        source.neighbours.forEach(targetName => {
+            const target = graph.findBuilding(targetName);
             if (target) {
-                links.push({ source: source, target: target });
+                links.push({ source, target });
             }
         });
     });
 
-    //Initiate SVG
+    // Initialize SVG
     const width = 800;
     const height = 800;
     const svg = d3.select("#subway-map")
         .attr("viewBox", `0 0 ${width} ${height}`)
         .attr("preserveAspectRatio", "xMidYMid meet")
         .attr("width", "100%")
-        .attr("height", "100%"); 
+        .attr("height", "100%");
 
-    const g = svg.append("g"); 
+    const g = svg.append("g");
 
-    //Draw the links
+    // Draw links
     const linkElements = g.selectAll(".link")
         .data(links)
         .enter().append("line")
@@ -251,30 +263,28 @@ function initMap() {
             const u = d.source.name;
             const v = d.target.name;
 
-            if (isTunnelClosed(u, v)) return "link closed";
-            if (isOutsideTunnel(u, v)) classes += " outside";
-            
+            if (graph.isTunnelClosed(u, v)) return "link closed";
+            if (graph.isOutsideTunnel(u, v)) classes += " outside";
+
             return classes;
         })
-        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
 
-    //Draw the buildings/nodes
+    // Draw nodes
     const nodeElements = g.selectAll(".node")
         .data(nodes)
         .enter().append("g")
-        .attr("class", d => isBuildingClosed(d.name) ? "node closed" : "node")
+        .attr("class", d => graph.isBuildingClosed(d.name) ? "node closed" : "node")
         .attr("id", d => `node-${d.name}`)
         .attr("transform", d => `translate(${d.x},${d.y})`)
-        .style("cursor", "pointer") 
-        
-        //Click functionalities
+        .style("cursor", "pointer")
         .on("click", function(event, d) {
-
-            // Get current values
             const startInput = document.getElementById("start_txtfield");
             const endInput = document.getElementById("end_txtfield");
-            
+
             if (startInput.value === "") {
                 startInput.value = d.name;
             } else if (endInput.value === "") {
@@ -283,17 +293,16 @@ function initMap() {
                 endInput.value = d.name;
             }
 
-            if (typeof updateFieldColor === "function") {
-                updateFieldColor();
-            }
+            updateFieldColor();
         });
 
     nodeElements.append("circle").attr("r", 8);
     nodeElements.append("text")
-        .attr("dx", 12).attr("dy", ".35em").text(d => d.name);
+        .attr("dx", 12)
+        .attr("dy", ".35em")
+        .text(d => d.name);
 
-
-    //Title
+    // Title
     svg.append("text")
         .attr("x", width / 2)
         .attr("y", 50)
@@ -305,80 +314,28 @@ function initMap() {
         .style("stroke-width", "0.5px")
         .text("University of Waterloo Tunnel and Bridge System Map");
 
-
     window.mapVisuals = { svg, linkElements, nodeElements };
 }
 
-//Calculate the shortest path
-function calculatePath() {
-    let start = document.getElementById("start_txtfield").value.toUpperCase();
-    let end = document.getElementById("end_txtfield").value.toUpperCase();
-    const outputText = document.getElementById("output");
-
-    // Check if the button has the blue class
-    const btn = document.getElementById("outside_btn");
-    const useOutside = btn ? btn.classList.contains("active-blue") : false;
-
-    if (!findBuilding(start) || !findBuilding(end)) {
-        alert("Invalid buildings");
-        return;
-    }
-
-    let allPaths = findAllPaths(start, end, useOutside);
-    let forcedOutside = false;
-
-    if (allPaths.length === 0 && !useOutside) {
-        const outsidePaths = findAllPaths(start, end, true);
-        //If there are only outside paths, then we are forced to use it
-        if (outsidePaths.length > 0) {
-            allPaths = outsidePaths;
-            forcedOutside = true;
-        }
-    }
-    
-
-    if (allPaths.length > 0) {
-        let bestPath = sortPaths(allPaths)[0];
-        let msg = "";
-        if (forcedOutside) {
-            msg = "⚠️ Outdoor path in use (No indoor route)<br>";
-            outputText.innerHTML = msg; 
-            outputText.style.color = "#00438aff"; 
-        } else {
-            outputText.textContent = msg;
-            outputText.style.color = "rgb(234, 171, 0)"; //Not actually used
-        }
-        highlightMap(bestPath);
-    } else {
-        alert("No path found (Check for closed buildings/tunnels).");
-        clearMapVisualsOnly();
-    }
-}
-
-//Highlight path on map
 function highlightMap(pathArray) {
     if (!window.mapVisuals) return;
     const { svg, linkElements, nodeElements } = window.mapVisuals;
-    
-    // Dim Everything else
+
     svg.classed("focus-mode", true);
-    
-    // Reset previous actives
     svg.selectAll(".active").classed("active", false);
 
-    // Highlight each node
+    // Highlight nodes
     nodeElements.filter(d => pathArray.includes(d.name))
         .classed("active", true);
 
-    // Highlight used edges
+    // Highlight edges
     linkElements.each(function(d) {
         const u = d.source.name;
         const v = d.target.name;
-        
+
         let isPathEdge = false;
-        // Check if this link connects two nodes that are adjacent in the path
         for (let i = 0; i < pathArray.length - 1; i++) {
-            if ((pathArray[i] === u && pathArray[i+1] === v) || 
+            if ((pathArray[i] === u && pathArray[i+1] === v) ||
                 (pathArray[i] === v && pathArray[i+1] === u)) {
                 isPathEdge = true;
                 break;
@@ -391,26 +348,6 @@ function highlightMap(pathArray) {
     });
 }
 
-//Clear the Map
-function clearMap() {
-    document.getElementById("start_txtfield").value = "";
-    document.getElementById("end_txtfield").value = "";
-
-    const btn = document.getElementById("outside_btn");
-    if (btn) {
-        btn.classList.remove("active-blue"); // Remove Blue Color
-        btn.innerHTML = "Use Outside Paths: Off"; 
-    }
-    
-    const output = document.getElementById("output");
-    output.textContent = "";
-    
-    if (typeof updateFieldColor === "function") {
-        updateFieldColor(); 
-    }
-    
-    clearMapVisualsOnly();
-}
 function clearMapVisualsOnly() {
     if (window.mapVisuals) {
         const { svg } = window.mapVisuals;
@@ -419,30 +356,103 @@ function clearMapVisualsOnly() {
     }
 }
 
+// -------------------------- Main Functions ------------------------------
 
-// -------------------------- Keyboard Shortcuts ------------------------------
-document.addEventListener("keydown", function(event) {
+function calculatePath() {
+    let start = sanitizeInput(document.getElementById("start_txtfield").value);
+    let end = sanitizeInput(document.getElementById("end_txtfield").value);
+    const outputText = document.getElementById("output");
 
-    if (event.key === "Enter") {
-        event.preventDefault(); 
-        calculatePath();
+    const btn = document.getElementById("outside_btn");
+    const useOutside = btn ? btn.classList.contains("active-blue") : false;
+
+    if (!graph.findBuilding(start) || !graph.findBuilding(end)) {
+        alert("Invalid buildings");
+        return;
     }
 
-    else if (event.key.toLowerCase() === "o") {
+    let bestPath = graph.findShortestPath(start, end, useOutside);
+    let forcedOutside = false;
+
+    // Fallback to outside paths if no indoor path
+    if (!bestPath && !useOutside) {
+        bestPath = graph.findShortestPath(start, end, true);
+        if (bestPath) {
+            forcedOutside = true;
+        }
+    }
+
+    if (bestPath) {
+        let msg = "";
+        if (forcedOutside) {
+            msg = "⚠️ Outdoor path in use (No indoor route)<br>";
+            outputText.innerHTML = msg;
+            outputText.style.color = "#00438aff";
+        } else {
+            outputText.textContent = "";
+        }
+        highlightMap(bestPath);
+    } else {
+        alert("No path found (Check for closed buildings/tunnels).");
+        clearMapVisualsOnly();
+    }
+}
+
+function clearMap() {
+    document.getElementById("start_txtfield").value = "";
+    document.getElementById("end_txtfield").value = "";
+
+    const btn = document.getElementById("outside_btn");
+    if (btn) {
+        btn.classList.remove("active-blue");
+        btn.innerHTML = "Use Outside Paths: Off";
+    }
+
+    const output = document.getElementById("output");
+    output.textContent = "";
+
+    updateFieldColor();
+    clearMapVisualsOnly();
+}
+
+// -------------------------- Keyboard Shortcuts ------------------------------
+
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        calculatePath();
+    } else if (event.key.toLowerCase() === "o") {
         const activeTag = document.activeElement.tagName;
         if (activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
             toggleOutside();
         }
-    }
-
-    else if (event.key === "Escape") {
+    } else if (event.key === "Escape") {
         clearMap();
-        document.activeElement.blur(); 
+        document.activeElement.blur();
     }
 });
 
-
 // -------------------------- Initialize on Load ------------------------------
-window.onload = function() {
+
+window.onload = async function() {
+    // Load graph data first
+    const loaded = await graph.loadGraph('graph.json');
+    if (!loaded) {
+        alert("Failed to load tunnel data. Please ensure graph.json is available.");
+        return;
+    }
+
+    // Initialize map visualization
     initMap();
+
+    // Set up debounced input handlers
+    const startInput = document.getElementById("start_txtfield");
+    const endInput = document.getElementById("end_txtfield");
+    
+    if (startInput) {
+        startInput.addEventListener('input', debouncedUpdateFieldColor);
+    }
+    if (endInput) {
+        endInput.addEventListener('input', debouncedUpdateFieldColor);
+    }
 };
